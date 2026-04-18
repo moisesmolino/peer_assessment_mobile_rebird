@@ -8,6 +8,8 @@ import '../../domain/usecases/get_course_groups.dart';
 import 'package:src/features/eval-form/domain/usecases/get_submitted_evaluation_ids.dart';
 import '../../domain/usecases/import_groups_from_csv.dart';
 import 'package:src/features/auth/presentation/viewmodels/user_controller.dart';
+import 'package:src/features/analytics-student/presentation/pages/analytics_student_page.dart';
+import 'package:src/features/analytics-student/presentation/state_management/analytics_student_binding.dart';
 import 'package:src/features/create-eval/presentation/pages/create_evaluation_page.dart';
 import 'package:src/features/create-eval/presentation/state_management/create_evaluation_binding.dart';
 import 'package:src/features/eval-form/presentation/pages/eval_form_page.dart';
@@ -119,7 +121,16 @@ class TapCourseController extends GetxController {
   }
 
   void onViewResultsTapped(CourseEvaluation evaluation) {
-    // TODO: navigate to results page
+    AnalyticsStudentBinding().dependencies();
+    Get.to(
+      () => const AnalyticsStudentPage(),
+      arguments: {
+        'evaluationId': evaluation.id,
+        'evaluationName': evaluation.name,
+        'courseName': course.name,
+        'isPublic': evaluation.visibility == 'public',
+      },
+    );
   }
 
   Future<void> onCreateEvaluationTapped() async {
