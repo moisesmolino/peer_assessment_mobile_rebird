@@ -66,6 +66,13 @@ class TeacherAnalyticsModel {
     }
     final perStudent = byStudent.entries.map((e) {
       final subset = e.value;
+      final comments = subset
+          .where((r) => (r['comment'] as String? ?? '').isNotEmpty)
+          .map((r) => StudentComment(
+                evaluatorEmail: r['evaluator_email'] as String? ?? '',
+                text: r['comment'] as String,
+              ))
+          .toList();
       return StudentSummary(
         email: e.key,
         displayName: emailToDisplayName[e.key] ?? e.key,
@@ -73,6 +80,7 @@ class TeacherAnalyticsModel {
         contributions: _criterion(subset, 'contributions'),
         commitment: _criterion(subset, 'commitment'),
         attitude: _criterion(subset, 'attitude'),
+        comments: comments,
       );
     }).toList()
       ..sort((a, b) => b.avgScore.compareTo(a.avgScore));

@@ -15,7 +15,6 @@ class AnalyticsTeacherController extends GetxController {
   late final String _courseName;
   late final Map<String, String> _evalIdToName;
 
-  // Tracks which student tile is expanded
   final RxString expandedEmail = ''.obs;
 
   @override
@@ -45,4 +44,7 @@ class AnalyticsTeacherController extends GetxController {
   }
 
   String get courseName => _courseName;
+
+  String get subtitle =>
+      _evalIdToName.length == 1 ? _evalIdToName.values.first : _courseName;
 }

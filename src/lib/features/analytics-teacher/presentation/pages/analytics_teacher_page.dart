@@ -22,7 +22,7 @@ class AnalyticsTeacherPage extends StatelessWidget {
         }
         return Column(
           children: [
-            _Header(courseName: c.courseName),
+            _Header(courseName: c.courseName, subtitle: c.subtitle),
             Expanded(
               child: c.hasNoData.value
                   ? _NoData()
@@ -37,8 +37,9 @@ class AnalyticsTeacherPage extends StatelessWidget {
 
 class _Header extends StatelessWidget {
   final String courseName;
+  final String subtitle;
 
-  const _Header({required this.courseName});
+  const _Header({required this.courseName, required this.subtitle});
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +78,7 @@ class _Header extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  courseName,
+                  subtitle,
                   style: GoogleFonts.inter(
                     color: Colors.white54,
                     fontSize: 12,

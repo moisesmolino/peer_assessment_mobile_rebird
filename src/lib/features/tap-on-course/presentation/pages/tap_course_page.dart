@@ -316,7 +316,7 @@ class _EvaluationsTab extends StatelessWidget {
                 : null,
             onViewResults: isStudent
                 ? () => controller.onViewResultsTapped(eval)
-                : null,
+                : () => controller.onViewEvaluationResultsTapped(eval),
           );
         },
       );

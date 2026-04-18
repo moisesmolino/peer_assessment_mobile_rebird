@@ -135,6 +135,18 @@ class TapCourseController extends GetxController {
     );
   }
 
+  void onViewEvaluationResultsTapped(CourseEvaluation evaluation) {
+    AnalyticsTeacherBinding().dependencies();
+    Get.to(
+      () => const AnalyticsTeacherPage(),
+      arguments: {
+        'courseId': course.id,
+        'courseName': course.name,
+        'evalIdToName': {evaluation.id: evaluation.name},
+      },
+    );
+  }
+
   void onViewTeacherAnalyticsTapped() {
     AnalyticsTeacherBinding().dependencies();
     Get.to(

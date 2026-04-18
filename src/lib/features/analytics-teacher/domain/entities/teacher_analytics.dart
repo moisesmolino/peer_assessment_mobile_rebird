@@ -1,3 +1,10 @@
+class StudentComment {
+  final String evaluatorEmail;
+  final String text;
+
+  const StudentComment({required this.evaluatorEmail, required this.text});
+}
+
 class StudentSummary {
   final String email;
   final String displayName;
@@ -5,6 +12,7 @@ class StudentSummary {
   final double contributions;
   final double commitment;
   final double attitude;
+  final List<StudentComment> comments;
 
   const StudentSummary({
     required this.email,
@@ -13,6 +21,7 @@ class StudentSummary {
     required this.contributions,
     required this.commitment,
     required this.attitude,
+    this.comments = const [],
   });
 
   double get avgScore => (punctuality + contributions + commitment + attitude) / 4;
