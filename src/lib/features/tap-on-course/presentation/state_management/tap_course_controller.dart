@@ -10,6 +10,8 @@ import '../../domain/usecases/import_groups_from_csv.dart';
 import 'package:src/features/auth/presentation/viewmodels/user_controller.dart';
 import 'package:src/features/analytics-student/presentation/pages/analytics_student_page.dart';
 import 'package:src/features/analytics-student/presentation/state_management/analytics_student_binding.dart';
+import 'package:src/features/analytics-teacher/presentation/pages/analytics_teacher_page.dart';
+import 'package:src/features/analytics-teacher/presentation/state_management/analytics_teacher_binding.dart';
 import 'package:src/features/create-eval/presentation/pages/create_evaluation_page.dart';
 import 'package:src/features/create-eval/presentation/state_management/create_evaluation_binding.dart';
 import 'package:src/features/eval-form/presentation/pages/eval_form_page.dart';
@@ -129,6 +131,20 @@ class TapCourseController extends GetxController {
         'evaluationName': evaluation.name,
         'courseName': course.name,
         'isPublic': evaluation.visibility == 'public',
+      },
+    );
+  }
+
+  void onViewTeacherAnalyticsTapped() {
+    AnalyticsTeacherBinding().dependencies();
+    Get.to(
+      () => const AnalyticsTeacherPage(),
+      arguments: {
+        'courseId': course.id,
+        'courseName': course.name,
+        'evalIdToName': Map.fromEntries(
+          evaluations.map((e) => MapEntry(e.id, e.name)),
+        ),
       },
     );
   }
