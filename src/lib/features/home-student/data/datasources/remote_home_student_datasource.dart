@@ -12,6 +12,16 @@ import 'package:src/features/home-student/data/models/evaluation_model.dart';
 class RemoteHomeStudentDataSource implements HomeStudentDataSource {
   final http.Client httpClient;
 
+  static const int _enrolledCoursesTtlMs = 10 * 60 * 1000;
+  static const String _enrolledCoursesCachePrefix = 'enrolled_courses_cache';
+  static const String _enrolledCoursesCacheTsPrefix =
+      'enrolled_courses_cache_ts';
+  static const int _activeEvaluationsTtlMs = 10 * 60 * 1000;
+  static const String _activeEvaluationsCachePrefix =
+      'active_evaluations_cache';
+  static const String _activeEvaluationsCacheTsPrefix =
+      'active_evaluations_cache_ts';
+
   final String contract = dotenv.get(
     'EXPO_PUBLIC_ROBLE_PROJECT_ID',
     fallback: "NO_ENV",
@@ -27,6 +37,12 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
   @override
   Future<List<CourseModel>> getEnrolledCourses(String studentEmail) async {
     final ILocalPreferences prefs = Get.find();
+
+    final cachedCourses = await _getCachedEnrolledCourses(prefs, studentEmail);
+    if (cachedCourses != null) {
+      return cachedCourses;
+    }
+
     final token = await prefs.getString('token');
     final headers = {'Authorization': 'Bearer $token'};
 
@@ -36,10 +52,15 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
       'correo': studentEmail,
     });
 
-    final grupitosResponse = await httpClient.get(grupitosUri, headers: headers);
+    final grupitosResponse = await httpClient.get(
+      grupitosUri,
+      headers: headers,
+    );
 
     if (grupitosResponse.statusCode != 200) {
-      logError('getEnrolledCourses grupitos error ${grupitosResponse.statusCode}');
+      logError(
+        'getEnrolledCourses grupitos error ${grupitosResponse.statusCode}',
+      );
       return Future.error('Error ${grupitosResponse.statusCode}');
     }
 
@@ -64,7 +85,9 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
       final catResponse = await httpClient.get(catUri, headers: headers);
 
       if (catResponse.statusCode != 200) {
-        logError('getEnrolledCourses group_categories error ${catResponse.statusCode}');
+        logError(
+          'getEnrolledCourses group_categories error ${catResponse.statusCode}',
+        );
         continue;
       }
 
@@ -79,6 +102,7 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
 
     //fetch each course from cursos by _id
     final List<CourseModel> courses = [];
+    final List<Map<String, dynamic>> coursesRaw = [];
 
     for (final courseId in courseIds) {
       final courseUri = Uri.https(baseUrl, '/database/$contract/read', {
@@ -89,22 +113,94 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
       final courseResponse = await httpClient.get(courseUri, headers: headers);
 
       if (courseResponse.statusCode != 200) {
-        logError('getEnrolledCourses cursos error ${courseResponse.statusCode}');
+        logError(
+          'getEnrolledCourses cursos error ${courseResponse.statusCode}',
+        );
         continue;
       }
 
       final List<dynamic> rows = jsonDecode(courseResponse.body);
       for (final row in rows) {
-        courses.add(CourseModel.fromJson(row));
+        final json = Map<String, dynamic>.from(row as Map);
+        courses.add(CourseModel.fromJson(json));
+        coursesRaw.add(json);
       }
+    }
+
+    if (coursesRaw.isNotEmpty) {
+      await _setCachedEnrolledCourses(prefs, studentEmail, coursesRaw);
     }
 
     return courses;
   }
 
+  Future<List<CourseModel>?> _getCachedEnrolledCourses(
+    ILocalPreferences prefs,
+    String studentEmail,
+  ) async {
+    final cacheKey = '${_enrolledCoursesCachePrefix}_$studentEmail';
+    final cacheTsKey = '${_enrolledCoursesCacheTsPrefix}_$studentEmail';
+    final cachedPayload = await prefs.getString(cacheKey);
+    final cacheTimestamp = await prefs.getInt(cacheTsKey);
+
+    if (cachedPayload == null || cacheTimestamp == null) {
+      return null;
+    }
+
+    final isExpired =
+        DateTime.now().millisecondsSinceEpoch - cacheTimestamp >
+        _enrolledCoursesTtlMs;
+    if (isExpired) {
+      return null;
+    }
+
+    try {
+      final List<dynamic> decoded = jsonDecode(cachedPayload);
+      return decoded
+          .map(
+            (item) =>
+                CourseModel.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
+          .toList();
+    } catch (e) {
+      logError('getEnrolledCourses cache decode error: $e');
+      return null;
+    }
+  }
+
+  Future<void> _setCachedEnrolledCourses(
+    ILocalPreferences prefs,
+    String studentEmail,
+    List<Map<String, dynamic>> payload,
+  ) async {
+    final cacheKey = '${_enrolledCoursesCachePrefix}_$studentEmail';
+    final cacheTsKey = '${_enrolledCoursesCacheTsPrefix}_$studentEmail';
+
+    try {
+      await prefs.setString(cacheKey, jsonEncode(payload));
+      await prefs.setInt(cacheTsKey, DateTime.now().millisecondsSinceEpoch);
+    } catch (e) {
+      logError('getEnrolledCourses cache store error: $e');
+    }
+  }
+
   @override
-  Future<List<EvaluationModel>> getActiveEvaluations(String studentEmail, Set<String> submittedIds) async {
+  Future<List<EvaluationModel>> getActiveEvaluations(
+    String studentEmail,
+    Set<String> submittedIds,
+  ) async {
     final ILocalPreferences prefs = Get.find();
+
+    final cachedEvaluations = await _getCachedActiveEvaluations(
+      prefs,
+      studentEmail,
+    );
+    if (cachedEvaluations != null) {
+      return cachedEvaluations
+          .where((e) => !submittedIds.contains(e.id.toString()))
+          .toList();
+    }
+
     final token = await prefs.getString('token');
     final headers = {'Authorization': 'Bearer $token'};
 
@@ -113,9 +209,14 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
       'tableName': 'grupitos',
       'correo': studentEmail,
     });
-    final grupitosResponse = await httpClient.get(grupitosUri, headers: headers);
+    final grupitosResponse = await httpClient.get(
+      grupitosUri,
+      headers: headers,
+    );
     if (grupitosResponse.statusCode != 200) {
-      logError('getActiveEvaluations grupitos error ${grupitosResponse.statusCode}');
+      logError(
+        'getActiveEvaluations grupitos error ${grupitosResponse.statusCode}',
+      );
       return [];
     }
     final List<dynamic> grupitos = jsonDecode(grupitosResponse.body);
@@ -143,6 +244,7 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
 
     // For each course, fetch active evaluations and course info
     final List<EvaluationModel> result = [];
+    final List<Map<String, dynamic>> evaluationsRaw = [];
     for (final courseId in courseIds) {
       final evalsUri = Uri.https(baseUrl, '/database/$contract/read', {
         'tableName': 'evaluations',
@@ -157,10 +259,7 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
       final rows = evals.cast<Map<String, dynamic>>();
       await _closeExpiredEvaluations(rows, headers);
       // after closing, exclude the ones that just expired
-      final stillActive = rows
-          .where((e) => e['status'] == 'active')
-          .where((e) => !submittedIds.contains(e['_id']?.toString()))
-          .toList();
+      final stillActive = rows.where((e) => e['status'] == 'active').toList();
       if (stillActive.isEmpty) continue;
 
       final courseUri = Uri.https(baseUrl, '/database/$contract/read', {
@@ -169,15 +268,81 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
       });
       final courseResponse = await httpClient.get(courseUri, headers: headers);
       final Map<String, dynamic> courseJson = courseResponse.statusCode == 200
-          ? ((jsonDecode(courseResponse.body) as List).firstOrNull as Map<String, dynamic>? ?? {})
+          ? ((jsonDecode(courseResponse.body) as List).firstOrNull
+                    as Map<String, dynamic>? ??
+                {})
           : {};
 
       for (final eval in stillActive) {
         result.add(EvaluationModel.fromDbJson(eval, courseJson));
+        evaluationsRaw.add({
+          'eval': Map<String, dynamic>.from(eval),
+          'course': Map<String, dynamic>.from(courseJson),
+        });
       }
     }
 
-    return result;
+    if (evaluationsRaw.isNotEmpty) {
+      await _setCachedActiveEvaluations(prefs, studentEmail, evaluationsRaw);
+    }
+
+    return result
+        .where((e) => !submittedIds.contains(e.id.toString()))
+        .toList();
+  }
+
+  Future<List<EvaluationModel>?> _getCachedActiveEvaluations(
+    ILocalPreferences prefs,
+    String studentEmail,
+  ) async {
+    final cacheKey = '${_activeEvaluationsCachePrefix}_$studentEmail';
+    final cacheTsKey = '${_activeEvaluationsCacheTsPrefix}_$studentEmail';
+    final cachedPayload = await prefs.getString(cacheKey);
+    final cacheTimestamp = await prefs.getInt(cacheTsKey);
+
+    if (cachedPayload == null || cacheTimestamp == null) {
+      return null;
+    }
+
+    final isExpired =
+        DateTime.now().millisecondsSinceEpoch - cacheTimestamp >
+        _activeEvaluationsTtlMs;
+    if (isExpired) {
+      return null;
+    }
+
+    try {
+      final List<dynamic> decoded = jsonDecode(cachedPayload);
+      final List<EvaluationModel> cached = [];
+
+      for (final item in decoded) {
+        final json = Map<String, dynamic>.from(item as Map);
+        final evalJson = Map<String, dynamic>.from(json['eval'] as Map);
+        final courseJson = Map<String, dynamic>.from(json['course'] as Map);
+        cached.add(EvaluationModel.fromDbJson(evalJson, courseJson));
+      }
+
+      return cached;
+    } catch (e) {
+      logError('getActiveEvaluations cache decode error: $e');
+      return null;
+    }
+  }
+
+  Future<void> _setCachedActiveEvaluations(
+    ILocalPreferences prefs,
+    String studentEmail,
+    List<Map<String, dynamic>> payload,
+  ) async {
+    final cacheKey = '${_activeEvaluationsCachePrefix}_$studentEmail';
+    final cacheTsKey = '${_activeEvaluationsCacheTsPrefix}_$studentEmail';
+
+    try {
+      await prefs.setString(cacheKey, jsonEncode(payload));
+      await prefs.setInt(cacheTsKey, DateTime.now().millisecondsSinceEpoch);
+    } catch (e) {
+      logError('getActiveEvaluations cache store error: $e');
+    }
   }
 
   Future<void> _closeExpiredEvaluations(
@@ -211,9 +376,10 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
       if (response.statusCode == 200) {
         row['status'] = 'closed';
       } else {
-        logError('_closeExpiredEvaluations PUT error ${response.statusCode}: ${response.body}');
+        logError(
+          '_closeExpiredEvaluations PUT error ${response.statusCode}: ${response.body}',
+        );
       }
     }
   }
-
 }
