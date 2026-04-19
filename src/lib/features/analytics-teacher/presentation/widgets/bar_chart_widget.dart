@@ -22,7 +22,7 @@ class BarChartWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const gridLevels = [2.0, 2.75, 3.5, 4.25, 5.0];
+    const gridLevels = [0.0, 1.25, 2.5, 3.75, 5.0];
     const chartHeight = 140.0;
 
     return Row(
