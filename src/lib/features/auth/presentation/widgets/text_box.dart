@@ -4,17 +4,19 @@ class TextBox extends StatelessWidget {
   final String hintText;
   final TextEditingController controller;
   final bool obscureText;
+  final FormFieldValidator<String>? Function()? validatorFunc;
 
   const TextBox({
     super.key,
     required this.hintText,
     required this.controller,
     this.obscureText = false,
+    this.validatorFunc,
   });
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
+    return TextFormField(
       controller: controller,
       cursorColor: Colors.orange,
       style: const TextStyle(color: Colors.white),
@@ -31,6 +33,7 @@ class TextBox extends StatelessWidget {
 
         border: OutlineInputBorder(),
       ),
+      validator: validatorFunc?.call(),
       obscureText: obscureText,
     );
   }
