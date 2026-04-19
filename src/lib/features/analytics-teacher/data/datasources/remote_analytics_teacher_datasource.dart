@@ -49,8 +49,6 @@ class RemoteAnalyticsTeacherDatasource implements IAnalyticsTeacherDatasource {
     final allRows = results[0] as List<Map<String, dynamic>>;
     final maps = results[1] as _EmailMaps;
 
-    if (allRows.isEmpty) return null;
-
     final model = TeacherAnalyticsModel(
       rows: allRows,
       emailToDisplayName: maps.emailToDisplayName,
@@ -66,7 +64,7 @@ class RemoteAnalyticsTeacherDatasource implements IAnalyticsTeacherDatasource {
       evalIdToName,
     );
 
-    return model;
+    return allRows.isEmpty ? null : model;
   }
 
   Future<List<Map<String, dynamic>>> _fetchAllResponses(
@@ -137,13 +135,31 @@ class RemoteAnalyticsTeacherDatasource implements IAnalyticsTeacherDatasource {
     return _EmailMaps(emailToDisplayName, emailToGroupName);
   }
 
+  String _evalcachekey(
+    String prefix,
+    String courseId,
+    Map<String, String> evalIdToName,
+  ) {
+    final ids = evalIdToName.keys.toList()..sort();
+    final idsPart = ids.join('|');
+    return '${prefix}_${courseId}_$idsPart';
+  }
+
   Future<TeacherAnalyticsModel?> _getCachedCourseAnalytics(
     ILocalPreferences prefs,
     String courseId,
     Map<String, String> evalIdToName,
   ) async {
-    final cacheKey = '${_courseAnalyticsCachePrefix}_$courseId';
-    final cacheTsKey = '${_courseAnalyticsCacheTsPrefix}_$courseId';
+    final cacheKey = _evalcachekey(
+      _courseAnalyticsCachePrefix,
+      courseId,
+      evalIdToName,
+    );
+    final cacheTsKey = _evalcachekey(
+      _courseAnalyticsCacheTsPrefix,
+      courseId,
+      evalIdToName,
+    );
     final cachedPayload = await prefs.getString(cacheKey);
     final cacheTimestamp = await prefs.getInt(cacheTsKey);
 
@@ -170,14 +186,14 @@ class RemoteAnalyticsTeacherDatasource implements IAnalyticsTeacherDatasource {
         decoded['emailToGroupName'] as Map? ?? {},
       );
 
-      if (rowsList.isEmpty) return null;
-
-      return TeacherAnalyticsModel(
+      final model = TeacherAnalyticsModel(
         rows: rowsList,
         emailToDisplayName: emailToDisplayName,
         emailToGroupName: emailToGroupName,
         evalIdToName: evalIdToName,
       );
+
+      return rowsList.isEmpty ? null : model;
     } catch (e) {
       logError('fetchCourseAnalytics cache decode error: $e');
       return null;
@@ -191,8 +207,16 @@ class RemoteAnalyticsTeacherDatasource implements IAnalyticsTeacherDatasource {
     _EmailMaps maps,
     Map<String, String> evalIdToName,
   ) async {
-    final cacheKey = '${_courseAnalyticsCachePrefix}_$courseId';
-    final cacheTsKey = '${_courseAnalyticsCacheTsPrefix}_$courseId';
+    final cacheKey = _evalcachekey(
+      _courseAnalyticsCachePrefix,
+      courseId,
+      evalIdToName,
+    );
+    final cacheTsKey = _evalcachekey(
+      _courseAnalyticsCacheTsPrefix,
+      courseId,
+      evalIdToName,
+    );
 
     try {
       final payload = {
