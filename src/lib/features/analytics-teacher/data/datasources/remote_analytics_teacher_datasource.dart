@@ -1,19 +1,12 @@
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:loggy/loggy.dart';
-import 'package:src/core/i_local_preferences.dart';
 import '../models/teacher_analytics_model.dart';
 import 'i_analytics_teacher_datasource.dart';
 
 class RemoteAnalyticsTeacherDatasource implements IAnalyticsTeacherDatasource {
   final http.Client httpClient;
-
-  static const int _analyticsTtlMs = 10 * 60 * 1000;
-  static const String _courseAnalyticsCachePrefix = 'teacher_analytics_cache';
-  static const String _courseAnalyticsCacheTsPrefix =
-      'teacher_analytics_cache_ts';
 
   final String contract = dotenv.get(
     'EXPO_PUBLIC_ROBLE_PROJECT_ID',
@@ -30,17 +23,6 @@ class RemoteAnalyticsTeacherDatasource implements IAnalyticsTeacherDatasource {
     required String courseId,
     required Map<String, String> evalIdToName,
   }) async {
-    final ILocalPreferences prefs = Get.find();
-
-    final cachedResult = await _getCachedCourseAnalytics(
-      prefs,
-      courseId,
-      evalIdToName,
-    );
-    if (cachedResult != null) {
-      return cachedResult;
-    }
-
     final results = await Future.wait([
       _fetchAllResponses(evalIdToName.keys.toList()),
       _fetchEmailMaps(courseId),
@@ -56,14 +38,6 @@ class RemoteAnalyticsTeacherDatasource implements IAnalyticsTeacherDatasource {
       emailToDisplayName: maps.emailToDisplayName,
       emailToGroupName: maps.emailToGroupName,
       evalIdToName: evalIdToName,
-    );
-
-    await _setCachedCourseAnalytics(
-      prefs,
-      courseId,
-      allRows,
-      maps,
-      evalIdToName,
     );
 
     return model;
@@ -135,76 +109,6 @@ class RemoteAnalyticsTeacherDatasource implements IAnalyticsTeacherDatasource {
     );
 
     return _EmailMaps(emailToDisplayName, emailToGroupName);
-  }
-
-  Future<TeacherAnalyticsModel?> _getCachedCourseAnalytics(
-    ILocalPreferences prefs,
-    String courseId,
-    Map<String, String> evalIdToName,
-  ) async {
-    final cacheKey = '${_courseAnalyticsCachePrefix}_$courseId';
-    final cacheTsKey = '${_courseAnalyticsCacheTsPrefix}_$courseId';
-    final cachedPayload = await prefs.getString(cacheKey);
-    final cacheTimestamp = await prefs.getInt(cacheTsKey);
-
-    if (cachedPayload == null || cacheTimestamp == null) {
-      return null;
-    }
-
-    final isExpired =
-        DateTime.now().millisecondsSinceEpoch - cacheTimestamp >
-        _analyticsTtlMs;
-    if (isExpired) {
-      return null;
-    }
-
-    try {
-      final decoded = jsonDecode(cachedPayload) as Map<String, dynamic>;
-      final rowsList =
-          (decoded['rows'] as List<dynamic>?)?.cast<Map<String, dynamic>>() ??
-          [];
-      final emailToDisplayName = Map<String, String>.from(
-        decoded['emailToDisplayName'] as Map? ?? {},
-      );
-      final emailToGroupName = Map<String, String>.from(
-        decoded['emailToGroupName'] as Map? ?? {},
-      );
-
-      if (rowsList.isEmpty) return null;
-
-      return TeacherAnalyticsModel(
-        rows: rowsList,
-        emailToDisplayName: emailToDisplayName,
-        emailToGroupName: emailToGroupName,
-        evalIdToName: evalIdToName,
-      );
-    } catch (e) {
-      logError('fetchCourseAnalytics cache decode error: $e');
-      return null;
-    }
-  }
-
-  Future<void> _setCachedCourseAnalytics(
-    ILocalPreferences prefs,
-    String courseId,
-    List<Map<String, dynamic>> allRows,
-    _EmailMaps maps,
-    Map<String, String> evalIdToName,
-  ) async {
-    final cacheKey = '${_courseAnalyticsCachePrefix}_$courseId';
-    final cacheTsKey = '${_courseAnalyticsCacheTsPrefix}_$courseId';
-
-    try {
-      final payload = {
-        'rows': allRows,
-        'emailToDisplayName': maps.emailToDisplayName,
-        'emailToGroupName': maps.emailToGroupName,
-      };
-      await prefs.setString(cacheKey, jsonEncode(payload));
-      await prefs.setInt(cacheTsKey, DateTime.now().millisecondsSinceEpoch);
-    } catch (e) {
-      logError('fetchCourseAnalytics cache store error: $e');
-    }
   }
 }
 
