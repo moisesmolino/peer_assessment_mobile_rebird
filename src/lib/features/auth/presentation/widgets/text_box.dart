@@ -4,14 +4,14 @@ class TextBox extends StatelessWidget {
   final String hintText;
   final TextEditingController controller;
   final bool obscureText;
-  final FormFieldValidator<String>? Function()? validatorFunc;
+  final Function validatorFunc;
 
   const TextBox({
     super.key,
     required this.hintText,
     required this.controller,
+    required this.validatorFunc,
     this.obscureText = false,
-    this.validatorFunc,
   });
 
   @override
@@ -33,7 +33,7 @@ class TextBox extends StatelessWidget {
 
         border: OutlineInputBorder(),
       ),
-      validator: validatorFunc?.call(),
+      validator: validatorFunc(),
       obscureText: obscureText,
     );
   }
