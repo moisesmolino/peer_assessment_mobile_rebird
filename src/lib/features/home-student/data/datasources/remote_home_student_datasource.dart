@@ -30,10 +30,6 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
 
   RemoteHomeStudentDataSource(this.httpClient);
 
-  /// Resolves enrolled courses for a student via this chain:
-  /// 1. grupitos (correo=email)    a  unique GroupCategory names
-  /// 2. group_categories (name=...) a course_id values
-  /// 3. cursos (_id=course_id)     a  Course entities
   @override
   Future<List<CourseModel>> getEnrolledCourses(String studentEmail) async {
     final ILocalPreferences prefs = Get.find();
@@ -46,7 +42,6 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
     final token = await prefs.getString('token');
     final headers = {'Authorization': 'Bearer $token'};
 
-    // find all grupitos rows where correo matches the student
     final grupitosUri = Uri.https(baseUrl, '/database/$contract/read', {
       'tableName': 'grupitos',
       'correo': studentEmail,
@@ -66,14 +61,12 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
 
     final List<dynamic> grupitos = jsonDecode(grupitosResponse.body);
 
-    // collect unique GroupCategory names
     final Set<String> categoryNames = grupitos
         .map((g) => g['GroupCategory'] as String)
         .toSet();
 
     if (categoryNames.isEmpty) return [];
 
-    // for each GroupCategory name, query group_categories to get course_id
     final Set<String> courseIds = {};
 
     for (final name in categoryNames) {
@@ -100,7 +93,6 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
 
     if (courseIds.isEmpty) return [];
 
-    //fetch each course from cursos by _id
     final List<CourseModel> courses = [];
     final List<Map<String, dynamic>> coursesRaw = [];
 
@@ -122,6 +114,14 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
       final List<dynamic> rows = jsonDecode(courseResponse.body);
       for (final row in rows) {
         final json = Map<String, dynamic>.from(row as Map);
+
+        // Enriquecer con activeEvaluations real
+        final activeEvaluations = await _getActiveEvaluationsCount(
+          courseId,
+          token!,
+        );
+        json['activeEvaluations'] = activeEvaluations;
+
         courses.add(CourseModel.fromJson(json));
         coursesRaw.add(json);
       }
@@ -132,6 +132,34 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
     }
 
     return courses;
+  }
+
+  Future<int> _getActiveEvaluationsCount(String courseId, String token) async {
+    try {
+      final uri = Uri.https(baseUrl, '/database/$contract/read', {
+        'tableName': 'evaluations',
+        'course_id': courseId,
+        'status': 'active',
+      });
+
+      final response = await httpClient.get(
+        uri,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> evaluations = jsonDecode(response.body);
+        return evaluations.length;
+      } else {
+        logError(
+          'evaluations error for course $courseId: ${response.statusCode}',
+        );
+        return 0;
+      }
+    } catch (e) {
+      logError('_getActiveEvaluationsCount error for course $courseId: $e');
+      return 0;
+    }
   }
 
   Future<List<CourseModel>?> _getCachedEnrolledCourses(
@@ -204,7 +232,6 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
     final token = await prefs.getString('token');
     final headers = {'Authorization': 'Bearer $token'};
 
-    // Get GroupCategory names for this student
     final grupitosUri = Uri.https(baseUrl, '/database/$contract/read', {
       'tableName': 'grupitos',
       'correo': studentEmail,
@@ -225,7 +252,6 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
         .toSet();
     if (categoryNames.isEmpty) return [];
 
-    // Resolve course_ids from group_categories
     final Set<String> courseIds = {};
     for (final name in categoryNames) {
       final catUri = Uri.https(baseUrl, '/database/$contract/read', {
@@ -242,7 +268,6 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
     }
     if (courseIds.isEmpty) return [];
 
-    // For each course, fetch active evaluations and course info
     final List<EvaluationModel> result = [];
     final List<Map<String, dynamic>> evaluationsRaw = [];
     for (final courseId in courseIds) {
@@ -258,7 +283,6 @@ class RemoteHomeStudentDataSource implements HomeStudentDataSource {
 
       final rows = evals.cast<Map<String, dynamic>>();
       await _closeExpiredEvaluations(rows, headers);
-      // after closing, exclude the ones that just expired
       final stillActive = rows.where((e) => e['status'] == 'active').toList();
       if (stillActive.isEmpty) continue;
 
