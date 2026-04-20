@@ -95,7 +95,7 @@ class CourseCard extends StatelessWidget {
                         const SizedBox(width: 4),
 
                         Text(
-                          "${course.activeEvaluations} evaluations",
+                          "${course.totalEvaluations} evaluations",
                           style: GoogleFonts.inter(
                             color: Colors.white54,
                             fontSize: 12,

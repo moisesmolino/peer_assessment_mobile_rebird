@@ -91,6 +91,7 @@ class RemoteHomeProfessorDataSource implements HomeProfessorDataSource {
 
     final studentsCount = await _getStudentsCount(courseId, token);
     final activeEvaluations = await _getActiveEvaluationsCount(courseId, token);
+    final totalEvaluations = await _getTotalEvaluationsCount(courseId, token);
 
     return Course(
       id: courseId,
@@ -99,12 +100,12 @@ class RemoteHomeProfessorDataSource implements HomeProfessorDataSource {
       period: courseJson['period'] ?? '---',
       studentsCount: studentsCount,
       activeEvaluations: activeEvaluations,
+      totalEvaluations: totalEvaluations,
     );
   }
 
   Future<int> _getStudentsCount(String courseId, String token) async {
     try {
-      // 1. Obtener group_categories del curso
       final gcUri = Uri.https(baseUrl, '/database/$contract/read', {
         'tableName': 'group_categories',
         'course_id': courseId,
@@ -125,7 +126,6 @@ class RemoteHomeProfessorDataSource implements HomeProfessorDataSource {
       final List<dynamic> groupCategories = jsonDecode(gcResponse.body);
       if (groupCategories.isEmpty) return 0;
 
-      // 2. Por cada group_category, recolectar correos únicos de grupitos
       final Set<String> uniqueEmails = {};
 
       await Future.wait(
@@ -188,6 +188,33 @@ class RemoteHomeProfessorDataSource implements HomeProfessorDataSource {
       }
     } catch (e) {
       logError('_getActiveEvaluationsCount error for course $courseId: $e');
+      return 0;
+    }
+  }
+
+  Future<int> _getTotalEvaluationsCount(String courseId, String token) async {
+    try {
+      final uri = Uri.https(baseUrl, '/database/$contract/read', {
+        'tableName': 'evaluations',
+        'course_id': courseId,
+      });
+
+      final response = await httpClient.get(
+        uri,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> evaluations = jsonDecode(response.body);
+        return evaluations.length;
+      } else {
+        logError(
+          'evaluations total error for course $courseId: ${response.statusCode}',
+        );
+        return 0;
+      }
+    } catch (e) {
+      logError('_getTotalEvaluationsCount error for course $courseId: $e');
       return 0;
     }
   }

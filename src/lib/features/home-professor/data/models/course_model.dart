@@ -9,6 +9,7 @@ class CourseModel extends Course {
     required super.period,
     required super.studentsCount,
     required super.activeEvaluations,
+    required super.totalEvaluations,
   });
 
 }
