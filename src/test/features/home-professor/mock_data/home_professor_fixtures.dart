@@ -7,6 +7,7 @@ Course buildProfessorCourse({
   String period = '2026-1',
   int studentsCount = 28,
   int activeEvaluations = 3,
+  int totalEvaluations = 5,
 }) {
   return Course(
     id: id,
@@ -15,5 +16,6 @@ Course buildProfessorCourse({
     period: period,
     studentsCount: studentsCount,
     activeEvaluations: activeEvaluations,
+    totalEvaluations: totalEvaluations,
   );
 }

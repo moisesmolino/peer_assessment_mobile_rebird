@@ -26,29 +26,6 @@ class RemoteHomeProfessorDataSource implements HomeProfessorDataSource {
 
   RemoteHomeProfessorDataSource(this.httpClient);
 
-  /* @override
-  Future<List<CourseModel>> getAssignedCourses(String professorId) async {
-    return [
-      CourseModel(
-        id: "1",
-        code: "COMP-2201",
-        name: "Software design",
-        period: "2026-10",
-        studentsCount: 30,
-        activeEvaluations: 2,
-      ),
-
-      CourseModel(
-        id: "2",
-        code: "ISTI-3401",
-        name: "Data structures",
-        period: "2026-10",
-        studentsCount: 36,
-        activeEvaluations: 3,
-      ),
-    ];
-  } */
- 
   @override
   Future<List<Course>> getAssignedCourses(String professorId) async {
     final ILocalPreferences prefs = Get.find();
@@ -91,6 +68,7 @@ class RemoteHomeProfessorDataSource implements HomeProfessorDataSource {
 
     final studentsCount = await _getStudentsCount(courseId, token);
     final activeEvaluations = await _getActiveEvaluationsCount(courseId, token);
+    final totalEvaluations = await _getTotalEvaluationsCount(courseId, token);
 
     return Course(
       id: courseId,
@@ -99,12 +77,12 @@ class RemoteHomeProfessorDataSource implements HomeProfessorDataSource {
       period: courseJson['period'] ?? '---',
       studentsCount: studentsCount,
       activeEvaluations: activeEvaluations,
+      totalEvaluations: totalEvaluations,
     );
   }
 
   Future<int> _getStudentsCount(String courseId, String token) async {
     try {
-      // 1. Obtener group_categories del curso
       final gcUri = Uri.https(baseUrl, '/database/$contract/read', {
         'tableName': 'group_categories',
         'course_id': courseId,
@@ -125,7 +103,6 @@ class RemoteHomeProfessorDataSource implements HomeProfessorDataSource {
       final List<dynamic> groupCategories = jsonDecode(gcResponse.body);
       if (groupCategories.isEmpty) return 0;
 
-      // 2. Por cada group_category, recolectar correos únicos de grupitos
       final Set<String> uniqueEmails = {};
 
       await Future.wait(
@@ -188,6 +165,33 @@ class RemoteHomeProfessorDataSource implements HomeProfessorDataSource {
       }
     } catch (e) {
       logError('_getActiveEvaluationsCount error for course $courseId: $e');
+      return 0;
+    }
+  }
+
+  Future<int> _getTotalEvaluationsCount(String courseId, String token) async {
+    try {
+      final uri = Uri.https(baseUrl, '/database/$contract/read', {
+        'tableName': 'evaluations',
+        'course_id': courseId,
+      });
+
+      final response = await httpClient.get(
+        uri,
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> evaluations = jsonDecode(response.body);
+        return evaluations.length;
+      } else {
+        logError(
+          'evaluations total error for course $courseId: ${response.statusCode}',
+        );
+        return 0;
+      }
+    } catch (e) {
+      logError('_getTotalEvaluationsCount error for course $courseId: $e');
       return 0;
     }
   }
