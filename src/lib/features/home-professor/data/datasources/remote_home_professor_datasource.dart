@@ -26,29 +26,6 @@ class RemoteHomeProfessorDataSource implements HomeProfessorDataSource {
 
   RemoteHomeProfessorDataSource(this.httpClient);
 
-  /* @override
-  Future<List<CourseModel>> getAssignedCourses(String professorId) async {
-    return [
-      CourseModel(
-        id: "1",
-        code: "COMP-2201",
-        name: "Software design",
-        period: "2026-10",
-        studentsCount: 30,
-        activeEvaluations: 2,
-      ),
-
-      CourseModel(
-        id: "2",
-        code: "ISTI-3401",
-        name: "Data structures",
-        period: "2026-10",
-        studentsCount: 36,
-        activeEvaluations: 3,
-      ),
-    ];
-  } */
- 
   @override
   Future<List<Course>> getAssignedCourses(String professorId) async {
     final ILocalPreferences prefs = Get.find();
