@@ -28,5 +28,6 @@ List<BarChartEntry> buildBarEntries() {
     BarChartEntry(label: 'A1', value: 4.1),
     BarChartEntry(label: 'A2', value: 3.6),
     BarChartEntry(label: 'A3', value: 4.8),
+    BarChartEntry(label: 'A4', value: 2),
   ];
 }
