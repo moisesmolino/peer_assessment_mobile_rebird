@@ -76,7 +76,7 @@ class TapCourseController extends GetxController {
 
   /// Called when the professor taps "+Add groups".
   /// Opens the system file picker so the user can select a CSV export.
-  Future<void> onAddGroupsTapped() async {
+Future<void> onAddGroupsTapped() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['csv'],
@@ -88,18 +88,28 @@ class TapCourseController extends GetxController {
     isImporting.value = true;
 
     final csvContent = String.fromCharCodes(result.files.single.bytes!);
+    final imported = await importGroupsFromCsv(csvContent, course.id);
 
-  final imported = await importGroupsFromCsv(csvContent, course.id); 
+    isImporting.value = false;
 
-    // Avoid duplicating a category that was already imported
+    if (imported.isEmpty) {
+      Get.snackbar(
+        'Already imported',
+        'This CSV has already been uploaded for this course.',
+        backgroundColor: const Color(0xFF3A2016),
+        colorText: const Color(0xFFFF8C60),
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
     for (final newCat in imported) {
       final alreadyExists = groupCategories.any((c) => c.name == newCat.name);
       if (!alreadyExists) {
         groupCategories.add(newCat);
       }
     }
-
-    isImporting.value = false;
 
     Get.snackbar(
       'Groups imported',
