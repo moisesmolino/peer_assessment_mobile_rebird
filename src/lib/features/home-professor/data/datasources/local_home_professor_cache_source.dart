@@ -65,4 +65,16 @@ class LocalHomeProfessorCacheSource {
       rethrow;
     }
   }
+
+  Future<void> invalidateAssignedCoursesCache(String professorId) async {
+    try {
+      final cacheKey = '${_assignedCoursesCachePrefix}_$professorId';
+      final cacheTsKey = '${_assignedCoursesCacheTsPrefix}_$professorId';
+
+      await prefs.remove(cacheKey);
+      await prefs.remove(cacheTsKey);
+    } catch (e) {
+      logError('Error invalidating assigned courses cache: $e');
+    }
+  }
 }

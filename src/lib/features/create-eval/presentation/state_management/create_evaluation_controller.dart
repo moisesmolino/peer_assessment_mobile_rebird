@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:src/features/tap-on-course/data/datasources/local_tap_course_cache_source.dart';
 import '../../domain/entities/create_evaluation_params.dart';
 import '../../domain/usecases/create_evaluation.dart';
 import 'package:src/features/tap-on-course/domain/entities/group_category.dart';
@@ -7,6 +8,10 @@ import 'package:src/features/tap-on-course/presentation/models/course_ui.dart';
 
 class CreateEvaluationController extends GetxController {
   final CreateEvaluation createEvaluationUseCase;
+  final LocalTapCourseCacheSource? tapCourseCacheSource =
+      Get.isRegistered<LocalTapCourseCacheSource>()
+      ? Get.find<LocalTapCourseCacheSource>()
+      : null;
 
   CreateEvaluationController({required this.createEvaluationUseCase});
 
@@ -15,8 +20,7 @@ class CreateEvaluationController extends GetxController {
 
   final nameController = TextEditingController();
   final RxnString selectedGroup = RxnString();
-  final Rx<DateTime> deadline =
-      DateTime.now().add(const Duration(days: 7)).obs;
+  final Rx<DateTime> deadline = DateTime.now().add(const Duration(days: 7)).obs;
   final RxString visibility = 'public'.obs;
   final RxBool isCreating = false.obs;
 
@@ -45,16 +49,26 @@ class CreateEvaluationController extends GetxController {
   Future<void> onCreateTapped() async {
     if (!isCreating.value && isFormValid) {
       isCreating.value = true;
-      final params = CreateEvaluationParams(
-        name: nameController.text.trim(),
-        courseId: course.id,
-        groupCategoryName: selectedGroup.value!,
-        deadline: deadline.value,
-        visibility: visibility.value,
-      );
-      await createEvaluationUseCase(params);
-      isCreating.value = false;
-      Get.back(result: true);
+      try {
+        final params = CreateEvaluationParams(
+          name: nameController.text.trim(),
+          courseId: course.id,
+          groupCategoryName: selectedGroup.value!,
+          deadline: deadline.value,
+          visibility: visibility.value,
+        );
+
+        await createEvaluationUseCase(params);
+        await _invalidateTapCourseEvaluationsCache();
+
+        Get.back(result: true);
+      } finally {
+        isCreating.value = false;
+      }
     }
+  }
+
+  Future<void> _invalidateTapCourseEvaluationsCache() async {
+    await tapCourseCacheSource?.invalidateCourseEvaluationsCache(course.id);
   }
 }
