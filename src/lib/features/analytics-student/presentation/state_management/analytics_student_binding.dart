@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:src/core/i_local_preferences.dart';
 import '../../data/datasources/i_analytics_student_datasource.dart';
+import '../../data/datasources/local_analytics_student_cache_source.dart';
 import '../../data/datasources/remote_analytics_student_datasource.dart';
 import '../../data/repositories/analytics_student_repository_impl.dart';
 import '../../domain/repositories/i_analytics_student_repository.dart';
@@ -10,6 +12,10 @@ import 'analytics_student_controller.dart';
 class AnalyticsStudentBinding extends Bindings {
   @override
   void dependencies() {
+    Get.lazyPut(
+      () => LocalAnalyticsStudentCacheSource(Get.find<ILocalPreferences>()),
+    );
+
     Get.lazyPut<IAnalyticsStudentDatasource>(
       () => RemoteAnalyticsStudentDatasource(
         Get.find<http.Client>(tag: 'apiClient'),
@@ -17,7 +23,7 @@ class AnalyticsStudentBinding extends Bindings {
     );
 
     Get.lazyPut<IAnalyticsStudentRepository>(
-      () => AnalyticsStudentRepositoryImpl(Get.find()),
+      () => AnalyticsStudentRepositoryImpl(Get.find(), Get.find()),
     );
 
     Get.lazyPut(() => GetStudentAnalytics(Get.find()));
