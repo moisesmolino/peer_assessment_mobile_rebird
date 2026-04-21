@@ -7,7 +7,7 @@ Course buildProfessorCourse({
   String period = '2026-1',
   int studentsCount = 28,
   int activeEvaluations = 3,
-  int totalEvaluations = 5,
+  int totalEvaluations = 3,
 }) {
   return Course(
     id: id,

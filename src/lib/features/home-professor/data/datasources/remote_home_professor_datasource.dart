@@ -11,11 +11,6 @@ import 'package:src/features/home-professor/domain/entities/course.dart';
 class RemoteHomeProfessorDataSource implements HomeProfessorDataSource {
   final http.Client httpClient;
 
-  static const int _assignedCoursesTtlMs = 10 * 60 * 1000;
-  static const String _assignedCoursesCachePrefix = 'assigned_courses_cache';
-  static const String _assignedCoursesCacheTsPrefix =
-      'assigned_courses_cache_ts';
-
   final String contract = dotenv.get(
     'EXPO_PUBLIC_ROBLE_PROJECT_ID',
     fallback: "NO_ENV",
@@ -29,11 +24,6 @@ class RemoteHomeProfessorDataSource implements HomeProfessorDataSource {
   @override
   Future<List<Course>> getAssignedCourses(String professorId) async {
     final ILocalPreferences prefs = Get.find();
-
-    final cachedCourses = await _getCachedAssignedCourses(prefs, professorId);
-    if (cachedCourses != null) {
-      return cachedCourses;
-    }
 
     var uri = Uri.https(baseUrl, '/database/$contract/read', {
       'tableName': table,
@@ -51,8 +41,6 @@ class RemoteHomeProfessorDataSource implements HomeProfessorDataSource {
       final List<Course> courses = await Future.wait(
         decodedJson.map((x) => _enrichCourse(x, token!)),
       );
-
-      await _setCachedAssignedCourses(prefs, professorId, courses);
       return courses;
     } else {
       logError("Got error code ${response.statusCode}");
@@ -193,54 +181,6 @@ class RemoteHomeProfessorDataSource implements HomeProfessorDataSource {
     } catch (e) {
       logError('_getTotalEvaluationsCount error for course $courseId: $e');
       return 0;
-    }
-  }
-
-  Future<List<Course>?> _getCachedAssignedCourses(
-    ILocalPreferences prefs,
-    String professorId,
-  ) async {
-    final cacheKey = '${_assignedCoursesCachePrefix}_$professorId';
-    final cacheTsKey = '${_assignedCoursesCacheTsPrefix}_$professorId';
-    final cachedPayload = await prefs.getString(cacheKey);
-    final cacheTimestamp = await prefs.getInt(cacheTsKey);
-
-    if (cachedPayload == null || cacheTimestamp == null) {
-      return null;
-    }
-
-    final isExpired =
-        DateTime.now().millisecondsSinceEpoch - cacheTimestamp >
-        _assignedCoursesTtlMs;
-    if (isExpired) {
-      return null;
-    }
-
-    try {
-      final List<dynamic> decoded = jsonDecode(cachedPayload);
-      return List<Course>.from(decoded.map((x) => Course.fromJson(x)));
-    } catch (e) {
-      logError('getAssignedCourses cache decode error: $e');
-      return null;
-    }
-  }
-
-  Future<void> _setCachedAssignedCourses(
-    ILocalPreferences prefs,
-    String professorId,
-    List<Course> courses,
-  ) async {
-    final cacheKey = '${_assignedCoursesCachePrefix}_$professorId';
-    final cacheTsKey = '${_assignedCoursesCacheTsPrefix}_$professorId';
-
-    try {
-      await prefs.setString(
-        cacheKey,
-        jsonEncode(courses.map((c) => c.toJson()).toList()),
-      );
-      await prefs.setInt(cacheTsKey, DateTime.now().millisecondsSinceEpoch);
-    } catch (e) {
-      logError('getAssignedCourses cache store error: $e');
     }
   }
 }

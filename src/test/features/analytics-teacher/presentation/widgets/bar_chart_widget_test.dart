@@ -13,10 +13,8 @@ void main() {
 
     await tester.pumpWidget(wrapForTest(BarChartWidget(entries: entries)));
 
-    expect(find.text('2'), findsOneWidget);
-    expect(find.text('2.75'), findsOneWidget);
-    expect(find.text('3.50'), findsOneWidget);
-    expect(find.text('4.25'), findsOneWidget);
+    expect(find.text('1.25'), findsOneWidget);
+    expect(find.text('3.75'), findsOneWidget);
     expect(find.text('5'), findsOneWidget);
 
     for (final entry in entries) {

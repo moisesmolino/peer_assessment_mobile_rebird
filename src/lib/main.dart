@@ -15,14 +15,17 @@ import 'package:src/features/auth/data/repository/auth_repository.dart';
 import 'package:src/features/auth/domain/repositories/i_auth_repository.dart';
 import 'package:src/features/auth/presentation/viewmodels/user_controller.dart';
 import 'package:src/features/home-professor/data/datasources/home_professor_datasource.dart';
+import 'package:src/features/home-professor/data/datasources/local_home_professor_cache_source.dart';
 import 'package:src/features/home-professor/data/repositories/home_professor_repository_impl.dart';
 import 'package:src/features/home-professor/data/datasources/remote_home_professor_datasource.dart';
 import 'package:src/features/home-professor/domain/repositories/home_professor_repository.dart';
 import 'package:src/features/home-student/data/datasources/home_student_datasource.dart';
+import 'package:src/features/home-student/data/datasources/local_home_student_cache_source.dart';
 import 'package:src/features/home-student/data/datasources/remote_home_student_datasource.dart';
 import 'package:src/features/home-student/data/repositories/home_student_repository_impl.dart';
 import 'package:src/features/home-student/domain/repositories/home_student_repository.dart';
 import 'central.dart';
+
 //diosmio
 void main() async {
   await dotenv.load(fileName: ".env");
@@ -49,16 +52,19 @@ void main() async {
     () =>
         RemoteHomeProfessorDataSource(Get.find<http.Client>(tag: 'apiClient')),
   );
+  Get.lazyPut(
+    () => LocalHomeProfessorCacheSource(Get.find<ILocalPreferences>()),
+  );
   Get.lazyPut<HomeProfessorRepository>(
-    () => HomeProfessorRepositoryImpl(Get.find()),
+    () => HomeProfessorRepositoryImpl(Get.find(), Get.find()),
   );
 
   Get.lazyPut<HomeStudentDataSource>(
-    () =>
-        RemoteHomeStudentDataSource(Get.find<http.Client>(tag: 'apiClient')),
+    () => RemoteHomeStudentDataSource(Get.find<http.Client>(tag: 'apiClient')),
   );
+  Get.lazyPut(() => LocalHomeStudentCacheSource(Get.find<ILocalPreferences>()));
   Get.lazyPut<HomeStudentRepository>(
-    () => HomeStudentRepositoryImpl(Get.find()),
+    () => HomeStudentRepositoryImpl(Get.find(), Get.find()),
   );
 
   Get.put<IAuthRepository>(AuthRepository(Get.find()));
