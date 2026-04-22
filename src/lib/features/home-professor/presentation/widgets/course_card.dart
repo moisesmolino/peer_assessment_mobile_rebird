@@ -32,26 +32,18 @@ class CourseCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           child: Row(
             children: [
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     Row(
                       children: [
-
                         _CourseBadge(text: course.code),
-
                         const SizedBox(width: 8),
-
                         _ActiveBadge(count: course.activeEvaluations),
-
                       ],
                     ),
-
                     const SizedBox(height: 8),
-
                     Text(
                       course.name,
                       style: GoogleFonts.inter(
@@ -60,7 +52,6 @@ class CourseCard extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-
                     Text(
                       course.period,
                       style: GoogleFonts.inter(
@@ -68,68 +59,57 @@ class CourseCard extends StatelessWidget {
                         fontSize: 13,
                       ),
                     ),
-
                     const SizedBox(height: 8),
 
-                    Row(
+                   
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 4,
                       children: [
-
-                        const Icon(Icons.groups_outlined,
-                            size: 16, color: Colors.white54),
-
-                        const SizedBox(width: 4),
-
-                        Text(
-                          "${course.studentsCount} students",
-                          style: GoogleFonts.inter(
-                            color: Colors.white54,
-                            fontSize: 12,
-                          ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.groups_outlined, size: 16, color: Colors.white54),
+                            const SizedBox(width: 4),
+                            Text(
+                              "${course.studentsCount} students",
+                              style: GoogleFonts.inter(color: Colors.white54, fontSize: 12),
+                            ),
+                          ],
                         ),
-
-                        const SizedBox(width: 12),
-
-                        const Icon(Icons.assignment_outlined,
-                            size: 16, color: Colors.white54),
-
-                        const SizedBox(width: 4),
-
-                        Text(
-                          "${course.activeEvaluations} evaluations",
-                          style: GoogleFonts.inter(
-                            color: Colors.white54,
-                            fontSize: 12,
-                          ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.assignment_outlined, size: 16, color: Colors.white54),
+                            const SizedBox(width: 4),
+                            Text(
+                              "${course.totalEvaluations} evaluations",
+                              style: GoogleFonts.inter(color: Colors.white54, fontSize: 12),
+                            ),
+                          ],
                         ),
-
-                        const SizedBox(width: 12),
-
-                        const Icon(Icons.link,
-                            size: 16, color: Colors.white54),
-
-                        const SizedBox(width: 4),
-
-                        Text(
-                          "DS-${course.period}-${course.code.toLowerCase()}",
-                          style: GoogleFonts.inter(
-                            color: Colors.white54,
-                            fontSize: 12,
-                          ),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.link, size: 16, color: Colors.white54),
+                            const SizedBox(width: 4),
+                            Text(
+                              "DS-${course.period}-${course.code.toLowerCase()}",
+                              style: GoogleFonts.inter(color: Colors.white54, fontSize: 12),
+                            ),
+                          ],
                         ),
-
                       ],
                     ),
 
                   ],
                 ),
               ),
-
               const Icon(
                 Icons.chevron_right,
                 color: Colors.white54,
                 size: 22,
               ),
-
             ],
           ),
         ),

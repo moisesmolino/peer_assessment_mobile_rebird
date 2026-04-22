@@ -86,7 +86,11 @@ class _CourseHeader extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.pie_chart_outline, color: Colors.white54, size: 22),
+            if (controller.isProfessor)
+              GestureDetector(
+                onTap: controller.onViewTeacherAnalyticsTapped,
+                child: const Icon(Icons.pie_chart_outline, color: Colors.white54, size: 22),
+              ),
           ],
         ),
       ),
@@ -312,7 +316,7 @@ class _EvaluationsTab extends StatelessWidget {
                 : null,
             onViewResults: isStudent
                 ? () => controller.onViewResultsTapped(eval)
-                : null,
+                : () => controller.onViewEvaluationResultsTapped(eval),
           );
         },
       );

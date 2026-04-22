@@ -25,7 +25,9 @@ class RemoteTapCourseDatasource implements TapCourseDatasource {
   };
 
   @override
-  Future<List<CourseEvaluationModel>> getCourseEvaluations(String courseId) async {
+  Future<List<CourseEvaluationModel>> getCourseEvaluations(
+    String courseId,
+  ) async {
     final uri = Uri.https(baseUrl, '/database/$contract/read', {
       'tableName': 'evaluations',
       'course_id': courseId,
@@ -34,7 +36,9 @@ class RemoteTapCourseDatasource implements TapCourseDatasource {
     final response = await httpClient.get(uri, headers: _headers);
 
     if (response.statusCode != 200) {
-      logError('getCourseEvaluations error ${response.statusCode}: ${response.body}');
+      logError(
+        'getCourseEvaluations error ${response.statusCode}: ${response.body}',
+      );
       return Future.error('Error fetching evaluations: ${response.statusCode}');
     }
 
@@ -69,7 +73,9 @@ class RemoteTapCourseDatasource implements TapCourseDatasource {
       if (response.statusCode == 200) {
         row['status'] = 'closed';
       } else {
-        logError('_closeExpiredEvaluations error ${response.statusCode}: ${response.body}');
+        logError(
+          '_closeExpiredEvaluations error ${response.statusCode}: ${response.body}',
+        );
       }
     }
   }
@@ -82,11 +88,18 @@ class RemoteTapCourseDatasource implements TapCourseDatasource {
       'course_id': courseId,
     });
 
-    final categoriesResponse = await httpClient.get(categoriesUri, headers: _headers);
+    final categoriesResponse = await httpClient.get(
+      categoriesUri,
+      headers: _headers,
+    );
 
     if (categoriesResponse.statusCode != 200) {
-      logError('getCourseGroups categories error ${categoriesResponse.statusCode}');
-      return Future.error('Error fetching group_categories: ${categoriesResponse.statusCode}');
+      logError(
+        'getCourseGroups categories error ${categoriesResponse.statusCode}',
+      );
+      return Future.error(
+        'Error fetching group_categories: ${categoriesResponse.statusCode}',
+      );
     }
 
     final List<dynamic> categoriesJson = jsonDecode(categoriesResponse.body);
@@ -102,10 +115,15 @@ class RemoteTapCourseDatasource implements TapCourseDatasource {
         'GroupCategory': categoryName,
       });
 
-      final grupitosResponse = await httpClient.get(grupitosUri, headers: _headers);
+      final grupitosResponse = await httpClient.get(
+        grupitosUri,
+        headers: _headers,
+      );
 
       if (grupitosResponse.statusCode != 200) {
-        logError('getCourseGroups grupitos error ${grupitosResponse.statusCode}');
+        logError(
+          'getCourseGroups grupitos error ${grupitosResponse.statusCode}',
+        );
         continue;
       }
 
@@ -119,24 +137,30 @@ class RemoteTapCourseDatasource implements TapCourseDatasource {
       }
 
       final List<CourseGroupModel> groups = byGroup.entries.map((entry) {
-        final members = entry.value.map((row) => GroupMemberModel(
-          firstName: row['FirstName'] as String,
-          lastName:  row['LastName']  as String,
-          email:     row['correo']    as String,
-        )).toList();
+        final members = entry.value
+            .map(
+              (row) => GroupMemberModel(
+                firstName: row['FirstName'] as String,
+                lastName: row['LastName'] as String,
+                email: row['correo'] as String,
+              ),
+            )
+            .toList();
 
         return CourseGroupModel(
-          name:    entry.key,
-          code:    entry.value.first['GroupCode'] as String,
+          name: entry.key,
+          code: entry.value.first['GroupCode'] as String,
           members: members,
         );
       }).toList();
 
-      result.add(GroupCategoryModel(
-        name:   categoryName,
-        source: categoryJson['source'] as String,
-        groups: groups,
-      ));
+      result.add(
+        GroupCategoryModel(
+          name: categoryName,
+          source: categoryJson['source'] as String,
+          groups: groups,
+        ),
+      );
     }
 
     return result;
@@ -154,7 +178,10 @@ class RemoteTapCourseDatasource implements TapCourseDatasource {
       'tableName': 'group_categories',
       'course_id': courseId,
     });
-    final existingResponse = await httpClient.get(existingUri, headers: _headers);
+    final existingResponse = await httpClient.get(
+      existingUri,
+      headers: _headers,
+    );
 
     final Set<String> existingNames = {};
     if (existingResponse.statusCode == 200) {
@@ -163,7 +190,9 @@ class RemoteTapCourseDatasource implements TapCourseDatasource {
     }
 
     // Only keep categories that are not yet in the db
-    final newCategories = categories.where((c) => !existingNames.contains(c.name)).toList();
+    final newCategories = categories
+        .where((c) => !existingNames.contains(c.name))
+        .toList();
 
     if (newCategories.isEmpty) return [];
 
@@ -190,15 +219,19 @@ class RemoteTapCourseDatasource implements TapCourseDatasource {
           "name": name,
           "source": "CSV",
           "created_at": DateTime.now().toIso8601String(),
-        }
+        },
       ],
     });
 
     final response = await httpClient.post(uri, headers: _headers, body: body);
 
     if (response.statusCode != 201) {
-      logError("_insertGroupCategory error ${response.statusCode}: ${response.body}");
-      return Future.error('Error inserting group_category: ${response.statusCode}');
+      logError(
+        "_insertGroupCategory error ${response.statusCode}: ${response.body}",
+      );
+      return Future.error(
+        'Error inserting group_category: ${response.statusCode}',
+      );
     }
   }
 
@@ -214,25 +247,24 @@ class RemoteTapCourseDatasource implements TapCourseDatasource {
         for (final member in group.members) {
           records.add({
             "GroupCategory": category.name,
-            "Groupname":     group.name,
-            "GroupCode":     group.code,
-            "FirstName":     member.firstName,
-            "LastName":      member.lastName,
-            "correo":        member.email,
+            "Groupname": group.name,
+            "GroupCode": group.code,
+            "FirstName": member.firstName,
+            "LastName": member.lastName,
+            "correo": member.email,
           });
         }
       }
     }
 
-    final body = jsonEncode({
-      "tableName": "grupitos",
-      "records": records,
-    });
+    final body = jsonEncode({"tableName": "grupitos", "records": records});
 
     final response = await httpClient.post(uri, headers: _headers, body: body);
 
     if (response.statusCode != 201) {
-      logError("_insertGrupitos error ${response.statusCode}: ${response.body}");
+      logError(
+        "_insertGrupitos error ${response.statusCode}: ${response.body}",
+      );
       return Future.error('Error inserting grupitos: ${response.statusCode}');
     }
   }

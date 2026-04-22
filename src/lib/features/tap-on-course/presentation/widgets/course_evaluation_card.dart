@@ -16,7 +16,7 @@ class CourseEvaluationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isActive = evaluation.status == 'active';
+    //final isActive = evaluation.status == 'active';
     final showCta = onEvaluate != null || onViewResults != null;
 
     return Container(

@@ -8,6 +8,10 @@ import '../../domain/usecases/get_course_groups.dart';
 import 'package:src/features/eval-form/domain/usecases/get_submitted_evaluation_ids.dart';
 import '../../domain/usecases/import_groups_from_csv.dart';
 import 'package:src/features/auth/presentation/viewmodels/user_controller.dart';
+import 'package:src/features/analytics-student/presentation/pages/analytics_student_page.dart';
+import 'package:src/features/analytics-student/presentation/state_management/analytics_student_binding.dart';
+import 'package:src/features/analytics-teacher/presentation/pages/analytics_teacher_page.dart';
+import 'package:src/features/analytics-teacher/presentation/state_management/analytics_teacher_binding.dart';
 import 'package:src/features/create-eval/presentation/pages/create_evaluation_page.dart';
 import 'package:src/features/create-eval/presentation/state_management/create_evaluation_binding.dart';
 import 'package:src/features/eval-form/presentation/pages/eval_form_page.dart';
@@ -72,7 +76,7 @@ class TapCourseController extends GetxController {
 
   /// Called when the professor taps "+Add groups".
   /// Opens the system file picker so the user can select a CSV export.
-  Future<void> onAddGroupsTapped() async {
+Future<void> onAddGroupsTapped() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['csv'],
@@ -84,18 +88,28 @@ class TapCourseController extends GetxController {
     isImporting.value = true;
 
     final csvContent = String.fromCharCodes(result.files.single.bytes!);
+    final imported = await importGroupsFromCsv(csvContent, course.id);
 
-  final imported = await importGroupsFromCsv(csvContent, course.id); 
+    isImporting.value = false;
 
-    // Avoid duplicating a category that was already imported
+    if (imported.isEmpty) {
+      Get.snackbar(
+        'Already imported',
+        'This CSV has already been uploaded for this course.',
+        backgroundColor: const Color(0xFF3A2016),
+        colorText: const Color(0xFFFF8C60),
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
     for (final newCat in imported) {
       final alreadyExists = groupCategories.any((c) => c.name == newCat.name);
       if (!alreadyExists) {
         groupCategories.add(newCat);
       }
     }
-
-    isImporting.value = false;
 
     Get.snackbar(
       'Groups imported',
@@ -119,7 +133,42 @@ class TapCourseController extends GetxController {
   }
 
   void onViewResultsTapped(CourseEvaluation evaluation) {
-    // TODO: navigate to results page
+    AnalyticsStudentBinding().dependencies();
+    Get.to(
+      () => const AnalyticsStudentPage(),
+      arguments: {
+        'evaluationId': evaluation.id,
+        'evaluationName': evaluation.name,
+        'courseName': course.name,
+        'isPublic': evaluation.visibility == 'public',
+      },
+    );
+  }
+
+  void onViewEvaluationResultsTapped(CourseEvaluation evaluation) {
+    AnalyticsTeacherBinding().dependencies();
+    Get.to(
+      () => const AnalyticsTeacherPage(),
+      arguments: {
+        'courseId': course.id,
+        'courseName': course.name,
+        'evalIdToName': {evaluation.id: evaluation.name},
+      },
+    );
+  }
+
+  void onViewTeacherAnalyticsTapped() {
+    AnalyticsTeacherBinding().dependencies();
+    Get.to(
+      () => const AnalyticsTeacherPage(),
+      arguments: {
+        'courseId': course.id,
+        'courseName': course.name,
+        'evalIdToName': Map.fromEntries(
+          evaluations.map((e) => MapEntry(e.id, e.name)),
+        ),
+      },
+    );
   }
 
   Future<void> onCreateEvaluationTapped() async {
