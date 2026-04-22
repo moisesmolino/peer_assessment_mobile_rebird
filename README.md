@@ -19,6 +19,10 @@
 
 ---
 
+## 🎥 Demo Playlist
+
+[![Watch the playlist](https://img.youtube.com/vi/VIDEO_ID/0.jpg)](https://youtube.com/playlist?list=PLCV9i2AFZVDFfAtGpIxeFaY1pgOq7d26d)
+
 ##  Overview
 
 **Evaluo** is a mobile application built with **Flutter** that enables fair, structured peer assessment in collaborative academic environments. Designed for university courses, it allows students to evaluate teammates based on predefined criteria while giving instructors actionable insights into both group and individual performance.
@@ -37,6 +41,9 @@
 |  **Team Management** | Automatic group formation and contribution tracking |
 
 ---
+
+
+
 
 ##  Architecture
 
