@@ -19,11 +19,95 @@
 
 ---
 
-## 🎥 Demo Playlist
+## Descripción de la aplicación
 
-[![Watch the playlist](https://img.youtube.com/vi/VIDEO_ID/0.jpg)](https://youtube.com/playlist?list=PLCV9i2AFZVDFfAtGpIxeFaY1pgOq7d26d)
+**Evaluo** es una aplicación móvil desarrollada en Flutter para gestionar procesos de **evaluación entre pares** en cursos universitarios. La plataforma centraliza en una sola app los flujos de estudiantes y docentes, permitiendo crear actividades de evaluación, diligenciar valoraciones por compañeros y consultar resultados con métricas accionables.
 
-##  Overview
+### Propósito
+
+Mejorar la transparencia, trazabilidad y equidad en el trabajo colaborativo académico, facilitando que:
+
+- Los estudiantes evalúen a sus compañeros con criterios claros y homogéneos.
+- Los docentes monitoreen el desempeño individual y grupal con evidencia cuantitativa y cualitativa.
+- El proceso de evaluación se integre al ciclo normal del curso con autenticación segura y datos persistentes.
+
+### Funcionalidades principales
+
+- **Autenticación y gestión de sesión por roles**
+  - Inicio de sesión, registro y validación de sesión.
+  - Separación de experiencia para estudiante y docente desde el acceso principal.
+
+- **Vista de inicio para estudiante**
+  - Consulta de cursos inscritos.
+  - Visualización de evaluaciones activas pendientes.
+  - Filtrado de evaluaciones ya respondidas para evitar duplicados.
+
+- **Vista de inicio para docente**
+  - Consulta de cursos asignados.
+  - Resumen de cantidad de cursos, estudiantes y evaluaciones activas por curso.
+
+- **Gestión de cursos y grupos**
+  - Consulta de evaluaciones y categorías de grupo por curso.
+  - Importación de grupos desde archivos CSV.
+
+- **Creación de evaluaciones**
+  - Configuración de nombre, curso, categoría de grupo, fecha límite y visibilidad (pública/privada).
+  - Actualización de información del curso tras crear una evaluación.
+
+- **Formulario de coevaluación**
+  - Evaluación por pares del mismo grupo.
+  - Criterios estructurados: puntualidad, contribuciones, compromiso y actitud.
+  - Escala de calificación y campo de comentarios opcionales.
+  - Envío de respuestas por cada compañero evaluado.
+
+- **Analíticas y resultados**
+  - Para estudiantes: promedio por criterio, promedio general y comentarios recibidos.
+  - Para docentes: métricas agregadas por actividad, por grupo y por estudiante, con detalle de comentarios.
+
+- **Soporte técnico de datos**
+  - Consumo de API con manejo de token y refresco automático de sesión.
+  - Caché local por módulos para mejorar tiempos de carga.
+  - Cierre automático de evaluaciones vencidas según fecha límite.
+
+### Alcance
+
+Evaluo está orientada a contextos académicos de educación superior donde se requiere evaluación de trabajo en equipo con seguimiento docente. En su alcance actual, la aplicación cubre el ciclo de autenticación de usuarios, consulta de cursos y evaluaciones por rol, configuración e importación de grupos, creación y diligenciamiento de evaluaciones entre pares, y consulta de resultados analíticos para estudiantes y docentes.
+
+No busca reemplazar un LMS completo, sino complementar el curso con un módulo especializado de coevaluación estructurada y análisis de desempeño.
+
+## Demo Videos
+
+<div align="center">
+
+<a href="https://youtu.be/TBtgmB99Puo">
+  <img src="https://img.youtube.com/vi/TBtgmB99Puo/0.jpg" width="250"/>
+</a>
+
+<a href="https://youtu.be/ZaoQafAAg70">
+  <img src="https://img.youtube.com/vi/ZaoQafAAg70/0.jpg" width="250"/>
+</a>
+
+<a href="https://youtu.be/RP4_TutqDlw">
+  <img src="https://img.youtube.com/vi/RP4_TutqDlw/0.jpg" width="250"/>
+</a>
+
+<a href="https://youtu.be/f__2SkOUjoc">
+  <img src="https://img.youtube.com/vi/f__2SkOUjoc/0.jpg" width="250"/>
+</a>
+
+<br/>
+
+<a href="https://youtu.be/t1gw3ovSucU">
+  <img src="https://img.youtube.com/vi/t1gw3ovSucU/0.jpg" width="250"/>
+</a>
+
+<a href="https://youtu.be/zC7QQSviowg">
+  <img src="https://img.youtube.com/vi/zC7QQSviowg/0.jpg" width="250"/>
+</a>
+
+</div>
+
+## Overview
 
 **Evaluo** is a mobile application built with **Flutter** that enables fair, structured peer assessment in collaborative academic environments. Designed for university courses, it allows students to evaluate teammates based on predefined criteria while giving instructors actionable insights into both group and individual performance.
 
@@ -31,21 +115,18 @@
 
 ---
 
-##  Features
+## Features
 
-| Feature | Description |
-|---|---|
-|  **Role-based Access** | Single app with distinct flows for students and instructors |
-|  **Structured Rubrics** | Predefined evaluation criteria for consistent, fair assessments |
-|  **Performance Insights** | Detailed metrics on individual and group contributions |
-|  **Team Management** | Automatic group formation and contribution tracking |
+| Feature                  | Description                                                     |
+| ------------------------ | --------------------------------------------------------------- |
+| **Role-based Access**    | Single app with distinct flows for students and instructors     |
+| **Structured Rubrics**   | Predefined evaluation criteria for consistent, fair assessments |
+| **Performance Insights** | Detailed metrics on individual and group contributions          |
+| **Team Management**      | Automatic group formation and contribution tracking             |
 
 ---
 
-
-
-
-##  Architecture
+## Architecture
 
 <div align="center">
   <img src="public/architecture.png" alt="Evaluo Architecture Diagram" width="700"/>
@@ -54,6 +135,7 @@
 <br/>
 
 Evaluo follows a **decoupled architecture** that separates frontend concerns from backend services, enabling:
+
 - **Scalability** — independent scaling of frontend and backend layers
 - **Maintainability** — clear separation of concerns across the codebase
 - **Security** — role-based access control with properly secured endpoints
@@ -63,9 +145,10 @@ Evaluo follows a **decoupled architecture** that separates frontend concerns fro
 
 ---
 
-##  Design
+## Design
 
 The UI/UX was designed in Figma with a strong emphasis on clarity, accessibility, and ease of use for both students and instructors.
+
 <div align="center">
   <img src="public/display1.png" alt="Screen 1" width="200"/>
   &nbsp;&nbsp;
@@ -84,7 +167,7 @@ The UI/UX was designed in Figma with a strong emphasis on clarity, accessibility
 
 ---
 
-##  Existing Solutions
+## Existing Solutions
 
 Research into existing peer assessment platforms informed Evaluo's design and feature set.
 
@@ -120,7 +203,7 @@ Supported by over two decades of academic research, Peerceptiv focuses on anonym
 
 ---
 
-##  Status
+## Status
 
 Evaluo is currently under **active development** as an academic project. Contributions and feedback are welcome.
 
